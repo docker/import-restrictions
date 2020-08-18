@@ -1,6 +1,8 @@
-all: cli
+all: build
 
-cli:
-	@go build .
+build:
+	docker build . --target build \
+	--platform local \
+	--output ./bin
 
-.PHONY: cli
+.PHONY: build
