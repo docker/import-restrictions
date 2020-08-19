@@ -1,0 +1,3 @@
+- path: ./
+  forbiddenImports:
+    - github.com/docker/cli

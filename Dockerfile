@@ -1,6 +1,5 @@
 # syntax=docker/dockerfile:experimental
 
-
 #   Copyright 2020 Docker, Inc.
 
 #   Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,3 +36,8 @@ RUN --mount=target=. \
 
 FROM scratch AS build
 COPY --from=make-build /out/* .
+
+FROM base as e2e
+COPY --from=make-build /out/* /usr/local/bin/
+RUN --mount=target=. \
+    make -f builder.Makefile e2e

@@ -5,4 +5,7 @@ build:
 	--platform local \
 	--output ./bin
 
-.PHONY: build
+e2e:
+	docker build . --target e2e
+
+.PHONY: build e2e

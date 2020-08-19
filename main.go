@@ -23,8 +23,10 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v2"
 )
@@ -59,6 +61,7 @@ func main() {
 
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }
 
@@ -79,13 +82,26 @@ func run(configFile string) error {
 		for _, dirImport := range dirImports {
 			for _, dependency := range dirImport.Deps {
 				if stringSliceContains(dir.ForbiddenImports, dependency) {
-					importErrors = multierror.Append(importErrors, fmt.Errorf("Forbidden import %q in package %s\n", dependency, dirImport.ImportPath))
+					importErrors = multierror.Append(importErrors, fmt.Errorf("Forbidden import %q in package %s", dependency, dirImport.ImportPath))
+					importErrors = multierror.Append(importErrors, fmt.Errorf("Forbidden import %q in package %s", dependency, dirImport.ImportPath))
 				}
 			}
 		}
 	}
 
-	return importErrors
+	if importErrors != nil {
+		importErrors.ErrorFormat = formatErrors
+	}
+
+	return importErrors.ErrorOrNil()
+}
+
+func formatErrors(errs []error) string {
+	messages := make([]string, len(errs))
+	for i, err := range errs {
+		messages[i] = "* " + err.Error()
+	}
+	return strings.Join(messages, "\n")
 }
 
 func loadConfig(cfg string) ([]importRestrictions, error) {
@@ -103,9 +119,10 @@ func loadConfig(cfg string) ([]importRestrictions, error) {
 }
 
 func getDirDeps(dir string) ([]goPackage, error) {
-	stdout, err := exec.Command("go", "list", "-json", fmt.Sprintf("%s...", dir)).Output()
+	cmd := exec.Command("go", "list", "-json", fmt.Sprintf("%s...", dir))
+	stdout, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(errors.Wrap(err, string(stdout)), "go list")
 	}
 
 	dec := json.NewDecoder(bytes.NewReader(stdout))
