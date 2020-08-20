@@ -83,7 +83,6 @@ func run(configFile string) error {
 			for _, dependency := range dirImport.Deps {
 				if stringSliceContains(dir.ForbiddenImports, dependency) {
 					importErrors = multierror.Append(importErrors, fmt.Errorf("Forbidden import %q in package %s", dependency, dirImport.ImportPath))
-					importErrors = multierror.Append(importErrors, fmt.Errorf("Forbidden import %q in package %s", dependency, dirImport.ImportPath))
 				}
 			}
 		}
